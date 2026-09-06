@@ -6,11 +6,11 @@ Turn your digital books into audio, with your choice of voice.
 
 The Android/iOS Flutter client is maintained as a separate project in [`mobile/`](mobile/README.md). Mobile provider support differs where client-side credential security or SDK availability requires it.
 
-A desktop application that converts text from TXT or EPUB files into MP3 audio. It supports Windows and macOS.
+A desktop application that converts text from TXT, EPUB or PDF files into MP3 audio. It supports Windows and macOS.
 
 ## Features
 
-- Extract text from TXT and EPUB files
+- Extract text from TXT, EPUB, PDF, MOBI, AZW, and AZW3 files
 - Generate MP3 files by EPUB chapter
 - Generate MP3 files by a specified character count
 - Select language and voice
@@ -62,7 +62,7 @@ The current macOS build is not code-signed or notarized by Apple. If macOS displ
 
 1. Select a TTS provider.
 2. If required, enter credentials under **Settings...**.
-3. Select a TXT or EPUB file.
+3. Select a TXT, EPUB or PDF file.
 4. Configure the output folder, language, voice, speed, and other options.
 5. Use **Preview Audio** if needed.
 6. Click **Generate MP3**.
@@ -71,7 +71,7 @@ The current macOS build is not code-signed or notarized by Apple. If macOS displ
 
 - **By chapter** uses the top-level EPUB table of contents on desktop and mobile. Separate chapter title and body files are joined, and nested sections stay in their parent chapter.
 - Front matter and identifiable end matter (such as notes or a colophon) remain separate selectable items. All items start checked; uncheck any you do not want to read. Unidentified continuation text stays in its chapter. Broken links do not invalidate other chapter boundaries. A missing anchor uses the start of its file only when that file has no valid chapter start. If no navigation targets are usable, text is retained by internal file.
-- **By character count** joins the TXT or EPUB body and splits it into sequential MP3 files named from `Part 001`. The default maximum is 5,000 characters.
+- **By character count** joins the TXT, EPUB or PDF body and splits it into sequential MP3 files named from `Part 001`. The default maximum is 5,000 characters.
 - Character counts are based on the processed text; spaces and line breaks each count as one character. The last sentence ending or line break within the limit is preferred. Text without a suitable boundary is split at the limit.
 - The selected splitting method and character count are restored the next time the application starts.
 
@@ -173,4 +173,17 @@ Copyright (c) 2026 YuluEthan
 
 If YomiPalette is useful to you, consider supporting its continued development. Your support helps improve features, fix bugs, and test Windows and Android compatibility. Support is optional and does not change which app features you can use.
 
-[Support development](https://github.com/sponsors/tjsongwei)
+- [Support via GitHub Sponsors](https://github.com/sponsors/tjsongwei)
+- [Support via Buy Me a Coffee](https://buymeacoffee.com/tjsongweic)
+
+## PDF input
+
+PDFs with embedded text are supported. **By chapter / page** creates units such as `Page 001` in physical page order; **By character count** joins all extracted page text before splitting. PDF bookmarks are not used as chapter boundaries. Pages without text (blank or image-only) are skipped, preserving original page numbers in titles.
+
+OCR is not supported. Image-only/scanned PDFs cannot be read; mixed documents contribute only their text pages. PDFs requiring a password are not supported. Vertical text, columns, tables, and unusual fonts may produce incorrect reading order or extraction. PDF text is extracted on the device; speech generation follows the normal behavior of the selected TTS provider.
+
+## Kindle input (MOBI / AZW / AZW3)
+
+Kindle files in MOBI, AZW, and AZW3 formats are supported. **AZW3 with embedded KF8 (EPUB)** is split into the same chapter boundaries the file declares, matching desktop EPUB behavior. **Older MOBI / AZW** files are returned as a single chapter because the legacy format does not expose a reliable table of contents; splitting still works through **By character count**.
+
+DRM-protected Kindle files (e.g. from the Kindle Store) cannot be read. Import a DRM-free copy (such as one created with Calibre after stripping the protection from a file you own). Other limitations: print-replica Kindle files (with a fixed PDF layout) are not supported; audio, video, fixed-layout, and dictionary entries are ignored. Text is extracted on the device; speech generation follows the normal behavior of the selected TTS provider.

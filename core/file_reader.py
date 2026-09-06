@@ -1,4 +1,4 @@
-"""txt/epub ファイルの読み込みとチャプター抽出"""
+"""TXT/EPUB/PDF/MOBI ファイルの読み込みとチャプター抽出"""
 
 import re
 from dataclasses import dataclass
@@ -78,6 +78,14 @@ def load_chapters(path: str) -> list[Chapter]:
         chapters = read_epub_file(path)
     elif lower.endswith(".txt"):
         chapters = read_text_file(path)
+    elif lower.endswith(".pdf"):
+        from core.pdf_reader import read_pdf_file
+
+        chapters = read_pdf_file(path)
+    elif lower.endswith((".mobi", ".azw", ".azw3")):
+        from core.mobi_reader import read_mobi_file
+
+        chapters = read_mobi_file(path)
     else:
         raise ValueError(t("error.unsupported_file", path=path))
     if not chapters:

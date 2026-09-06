@@ -6,10 +6,12 @@ import sys
 import tempfile
 import threading
 import tkinter as tk
+import webbrowser
 from tkinter import filedialog, messagebox, ttk
 
 from i18n import LANGUAGE_NAMES, SUPPORTED_LANGUAGES, set_language, t
 from core import config
+from core.app_info import SUPPORT_LINKS, VERSION
 from core.file_reader import Chapter, load_chapters, split_chapters_by_chars
 from core.providers import all_providers, get_provider
 from core.providers.base import CancelledError, ProviderError
@@ -88,7 +90,7 @@ class TTSApp:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
         set_language(config.get_last("ui_language"))
-        self.root.title(t("app.title"))
+        self.root.title(f'{t("app.title")} v{VERSION}')
         self.root.geometry("780x780")
 
         self.chapters: list[Chapter] = []
@@ -109,6 +111,62 @@ class TTSApp:
             self.var_provider.set(self._name_to_label["edge"])
         self.root.after(100, lambda: self._on_provider_changed(initial=True))
 
+    def _open_support_url(self, url: str) -> None:
+        try:
+            if webbrowser.open(url):
+                return
+        except webbrowser.Error:
+            pass
+        self._show_support_open_failed(url)
+
+    def _open_support(self) -> None:
+        dialog = tk.Toplevel(self.root)
+        dialog.title(t("support.dialog_title"))
+        dialog.transient(self.root)
+        dialog.resizable(False, False)
+        dialog.grab_set()
+
+        frame = ttk.Frame(dialog, padding=14)
+        frame.pack(fill="both", expand=True)
+        ttk.Label(frame, text=t("support.dialog_message"), wraplength=380).pack(
+            fill="x", pady=(0, 10)
+        )
+        for label, url in SUPPORT_LINKS:
+            ttk.Button(
+                frame,
+                text=label,
+                command=lambda target=url: (dialog.destroy(), self._open_support_url(target)),
+            ).pack(fill="x", pady=3)
+        ttk.Button(frame, text=t("support.close"), command=dialog.destroy).pack(
+            side="right", pady=(10, 0)
+        )
+
+    def _show_support_open_failed(self, url: str) -> None:
+        dialog = tk.Toplevel(self.root)
+        dialog.title(t("support.open_failed_title"))
+        dialog.transient(self.root)
+        dialog.resizable(False, False)
+        dialog.grab_set()
+
+        frame = ttk.Frame(dialog, padding=14)
+        frame.pack(fill="both", expand=True)
+        ttk.Label(frame, text=t("support.open_failed_message"), wraplength=420).pack(
+            fill="x", pady=(0, 8)
+        )
+        url_entry = ttk.Entry(frame, width=54)
+        url_entry.insert(0, url)
+        url_entry.config(state="readonly")
+        url_entry.pack(fill="x")
+
+        buttons = ttk.Frame(frame)
+        buttons.pack(fill="x", pady=(10, 0))
+        ttk.Button(
+            buttons,
+            text=t("support.copy"),
+            command=lambda: (self.root.clipboard_clear(), self.root.clipboard_append(url)),
+        ).pack(side="left")
+        ttk.Button(buttons, text=t("support.close"), command=dialog.destroy).pack(side="right")
+
     def _build_widgets(self) -> None:
         pad = {"padx": 8, "pady": 4}
 
@@ -125,6 +183,11 @@ class TTSApp:
         )
         self.cmb_ui_language.pack(side="left")
         self.cmb_ui_language.bind("<<ComboboxSelected>>", self._on_ui_language_changed)
+        ttk.Button(
+            frm_language, text=t("app.support"), command=self._open_support,
+            style="Toolbutton",
+        ).pack(side="right", padx=(8, 0))
+        ttk.Label(frm_language, text=f"v{VERSION}", foreground="#666666").pack(side="right")
 
         frm_prov = ttk.LabelFrame(self.root, text=t("provider.group"))
         frm_prov.pack(fill="x", **pad)
@@ -299,7 +362,7 @@ class TTSApp:
         self.voice_request_id += 1
         for child in self.root.winfo_children():
             child.destroy()
-        self.root.title(t("app.title"))
+        self.root.title(f'{t("app.title")} v{VERSION}')
         self._build_widgets()
         self.var_provider.set(self._name_to_label.get(provider_name, self._name_to_label["edge"]))
         self.var_filepath.set(filepath)
@@ -521,9 +584,11 @@ class TTSApp:
     def on_browse_file(self) -> None:
         path = filedialog.askopenfilename(
             filetypes=[
-                (t("file.supported"), "*.txt *.epub"),
+                (t("file.supported"), "*.txt *.epub *.pdf *.mobi *.azw *.azw3"),
                 (t("file.text"), "*.txt"),
                 ("EPUB", "*.epub"),
+                ("PDF", "*.pdf"),
+                ("MOBI/AZW/AZW3", "*.mobi *.azw *.azw3"),
             ]
         )
         if not path:
